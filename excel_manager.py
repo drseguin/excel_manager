@@ -3,6 +3,8 @@ import os
 import openpyxl
 from openpyxl import Workbook
 from openpyxl import load_workbook
+from openpyxl.formula.tokenizer import Tokenizer
+import re
 
 # Configure logging
 logging.basicConfig(
@@ -61,7 +63,7 @@ class ExcelManager:
             self.logger.error(f"File does not exist: {path}")
             raise FileNotFoundError(f"File does not exist: {path}")
         
-        self.workbook = load_workbook(path)
+        self.workbook = load_workbook(path, data_only=False)
         self.file_path = path
         self.logger.info(f"Loaded workbook from {path}")
         return self.workbook
@@ -163,12 +165,65 @@ class ExcelManager:
         del self.workbook[sheet_name]
         self.logger.info(f"Deleted sheet: {sheet_name}")
     
-    def read_cell(self, sheet_name, row, column):
+    def _get_cell_coordinates(self, cell_reference, current_sheet_name):
         """
-        Read a cell value.
+        Parse a cell reference and return the sheet name, row, and column.
+        
+        Examples:
+        - A1: same sheet, row 1, column 1
+        - Sheet2!B3: Sheet2, row 3, column 2
+        """
+        sheet_name = current_sheet_name
+        
+        # Check if the reference includes a sheet name
+        if '!' in cell_reference:
+            parts = cell_reference.split('!')
+            sheet_name = parts[0].strip("'")
+            cell_reference = parts[1]
+        
+        # Convert column letters to column number
+        match = re.match(r'([A-Za-z]+)([0-9]+)', cell_reference)
+        if not match:
+            self.logger.error(f"Invalid cell reference: {cell_reference}")
+            raise ValueError(f"Invalid cell reference: {cell_reference}")
+        
+        col_str, row_str = match.groups()
+        
+        # Convert column letters to column number
+        col_num = 0
+        for c in col_str.upper():
+            col_num = col_num * 26 + (ord(c) - ord('A') + 1)
+        
+        row_num = int(row_str)
+        
+        return sheet_name, row_num, col_num
+    
+    def read_cell(self, sheet_name, row, column, hop=False):
+        """
+        Read a cell value. If hop is True and the cell contains a reference formula (=A1),
+        follow the reference and return the value from the referenced cell.
         """
         sheet = self.get_sheet(sheet_name)
-        value = sheet.cell(row=row, column=column).value
+        cell = sheet.cell(row=row, column=column)
+        value = cell.value
+        
+        if hop and isinstance(value, str) and value.startswith('='):
+            try:
+                # Simple case: direct cell reference like =A1 or =Sheet1!A1
+                cell_ref = value[1:].strip()
+                
+                # Check if it's a simple cell reference without operators
+                if re.match(r'^[A-Za-z0-9!]+$', cell_ref.replace("'", "")):
+                    ref_sheet_name, ref_row, ref_col = self._get_cell_coordinates(cell_ref, sheet_name)
+                    ref_value = self.read_cell(ref_sheet_name, ref_row, ref_col, hop=False)
+                    self.logger.info(f"Read referenced value '{ref_value}' from cell {cell_ref}")
+                    return ref_value
+                else:
+                    self.logger.warning(f"Complex formula detected, cannot hop: {value}")
+                    
+            except Exception as e:
+                self.logger.error(f"Error following cell reference: {e}")
+                
         self.logger.info(f"Read value '{value}' from cell ({row}, {column}) in sheet {sheet_name}")
         return value
     

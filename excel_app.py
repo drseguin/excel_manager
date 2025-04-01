@@ -88,15 +88,21 @@ if st.session_state.excel_manager is not None:
             selected_sheet = st.selectbox("Select sheet", sheet_names)
             
             # Read cell
-            col1, col2 = st.columns(2)
+            col1, col2, col3 = st.columns(3)
             with col1:
                 read_row = st.number_input("Row", min_value=1, value=1, key="read_row")
             with col2:
                 read_col = st.number_input("Column", min_value=1, value=1, key="read_col")
+            with col3:
+                resolve_references = st.checkbox("Resolve References", value=False, help="Follow cell references (like =A1) to get the actual value")
             
             if st.button("Read Cell"):
-                value = st.session_state.excel_manager.read_cell(selected_sheet, read_row, read_col)
+                value = st.session_state.excel_manager.read_cell(selected_sheet, read_row, read_col, hop=resolve_references)
                 st.info(f"Cell value: {value}")
+                
+                # Display additional info if it's a formula
+                if isinstance(value, str) and value.startswith('='):
+                    st.info("This cell contains a formula reference. Check 'Resolve References' to see the referenced value.")
             
             # Read range
             st.subheader("Read Range")
