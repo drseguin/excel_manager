@@ -1,0 +1,25 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+    {
+    "name": "Streamlit Debugger Dave",
+    "type": "debugpy",
+    "request": "launch",
+    "program": "/Users/davidseguin/git/overwatch/.venv/lib/python3.11/site-packages/streamlit",
+    "console": "integratedTerminal",
+        "cwd": "/Users/davidseguin/git/excel_manager",
+        "args": ["run", "/Users/davidseguin/git/excel_manager/excel_app.py"],
+        "python": "/Users/davidseguin/git/excel_manager/.venv/bin/python"
+    },
+    {
+        "name": "JSON Editor",
+        "type": "debugpy",
+        "request": "launch",
+        "program": "/Users/davidseguin/git/overwatch/.venv/lib/python3.11/site-packages/streamlit",
+        "console": "integratedTerminal",
+            "cwd": "/Users/davidseguin/git/overwatch/plugins/json_editor",
+            "args": ["run", "/Users/davidseguin/git/overwatch/plugins/json_editor/json_editor.py"],
+            "python": "/Users/davidseguin/git/overwatch/.venv/bin/python"
+    }
+    ]
+}
