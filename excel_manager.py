@@ -509,3 +509,86 @@ class excelManager:
         # If no non-empty cells were found
         self.logger.warning(f"No values found starting from {get_column_letter(start_col)}{start_row} in sheet {sheet_name}")
         return None
+    
+    def read_items(self, sheet_name, row_or_cell, column=None, offset=0):
+        """
+        Read a range of items until an empty cell is found.
+        
+        Can be called in two ways:
+        - read_items(sheet_name, 'A1', offset=0) - using cell reference
+        - read_items(sheet_name, 1, 1, offset=0) - using row and column numbers
+        
+        Parameters:
+        - sheet_name: The name of the sheet to read from
+        - row_or_cell: Either a cell reference string (e.g., "A1") or a row number
+        - column: Optional column number (required if row_or_cell is a row number)
+        - offset: Number of rows to exclude from the end of the found range (default 0)
+        
+        Returns:
+        - A list of values from the starting cell until an empty cell is found, 
+          with optional offset to exclude the last few rows
+        """
+        if not self.workbook:
+            self.logger.error("No workbook loaded")
+            raise ValueError("No workbook loaded")
+        
+        # Get the row and column based on the input parameters
+        if column is None:
+            # Assume row_or_cell is a cell reference like 'A1'
+            if not isinstance(row_or_cell, str):
+                self.logger.error("Cell reference must be a string")
+                raise ValueError("Cell reference must be a string")
+            
+            sheet_ref, start_row, start_col = self._parse_cell_reference(row_or_cell, sheet_name)
+            sheet_name = sheet_ref  # Use the sheet name from the reference if provided
+        else:
+            # Using row and column numbers
+            start_row = row_or_cell
+            start_col = column
+        
+        if sheet_name not in self.workbook.sheetnames:
+            self.logger.error(f"Sheet does not exist: {sheet_name}")
+            raise ValueError(f"Sheet does not exist: {sheet_name}")
+        
+        # Get the sheet from the data_only workbook to read calculated values
+        sheet = self.workbook[sheet_name]
+        
+        # Start from the given cell and traverse down
+        current_row = start_row
+        max_rows = sheet.max_row
+        
+        # Store all non-empty values encountered
+        items = []
+        
+        while current_row <= max_rows:
+            value = sheet.cell(row=current_row, column=start_col).value
+            
+            # If we find an empty cell, break the loop
+            if value is None or value == '':
+                break
+            
+            # Format the value if needed
+            if isinstance(value, float):
+                value = round(value, 2)
+            
+            # Check if cell is formatted as currency and prepend '$'
+            formula_cell = self.formula_workbook[sheet_name].cell(row=current_row, column=start_col)
+            if formula_cell.number_format and '$' in formula_cell.number_format and isinstance(value, (int, float)):
+                value = "$" + str(value)
+            
+            items.append(value)
+            current_row += 1
+        
+        # Apply the offset to exclude the specified number of rows from the end
+        if offset != 0 and items:
+            offset = min(abs(offset), len(items))  # Ensure offset doesn't exceed list length
+            items = items[:-offset] if offset > 0 else items
+        
+        start_cell_ref = f"{get_column_letter(start_col)}{start_row}"
+        end_row = start_row + len(items) - 1 if items else start_row
+        end_cell_ref = f"{get_column_letter(start_col)}{end_row}"
+        range_ref = f"{start_cell_ref}:{end_cell_ref}" if items else start_cell_ref
+        
+        self.logger.info(f"Read {len(items)} items from range {range_ref} in sheet {sheet_name} with offset {offset}")
+        
+        return items

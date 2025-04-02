@@ -124,6 +124,24 @@ if st.session_state.excel_manager is not None:
                         st.warning("No total value found in this column.")
                 except Exception as e:
                     st.error(f"Error finding total: {str(e)}")
+            
+            # Read items (new functionality)
+            st.subheader("Read Items")
+            items_start_reference = st.text_input("Starting Cell (e.g. A1, F25):", "A1", key="items_start_ref")
+            offset_value = st.number_input("Offset (rows to exclude from end):", min_value=0, value=0, key="offset_value")
+            
+            if st.button("Find Items"):
+                try:
+                    items = st.session_state.excel_manager.read_items(selected_sheet, items_start_reference, offset=offset_value)
+                    if items:
+                        st.info(f"Found {len(items)} items:")
+                        # Display items as a dataframe for better formatting
+                        df = pd.DataFrame({"Items": items})
+                        st.dataframe(df)
+                    else:
+                        st.warning("No items found starting from this cell.")
+                except Exception as e:
+                    st.error(f"Error finding items: {str(e)}")
     
     with tab3:
         st.subheader("Write Operations")
