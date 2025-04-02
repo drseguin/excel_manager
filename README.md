@@ -1,32 +1,29 @@
-# Excel Manager Application
+# Excel Manager
 
-A Streamlit-based application for managing Excel files with various read, write, and management operations.
+A Python class for managing Excel files with various read, write, and sheet management operations.
+
+## Overview
+
+The `excelManager` class provides a powerful yet simple interface for interacting with Excel workbooks. It supports reading calculated values from formulas, maintaining formatting information, and handling various Excel operations.
 
 ## Features
 
-The Excel Manager application provides a user-friendly interface to perform common Excel operations:
+- Create, load, and save Excel workbooks
+- Manage sheets (create, delete, list)
+- Read individual cells and ranges with calculated values
+- Write to cells and ranges
+- Find totals at the end of columns 
+- Support for A1 notation and row/column indices
+- Consistent error handling and logging
+- Currency and numeric formatting support
 
-### Sheet Operations
-- Create new workbooks and sheets
-- Count sheets in a workbook
-- Get sheet names
-- Delete sheets
-
-### Read Operations
-- Read individual cell values
-- Read ranges of cells
-- **Read Total**: Automatically find a total value by traversing down a column from a starting point
-
-### Write Operations
-- Write values to individual cells
-- Write ranges of data from CSV input
-
-## Excel Manager Class
-
-The `excelManager` class provides the core functionality for Excel operations:
+## Usage
 
 ### Initialization
+
 ```python
+from excel_manager import excelManager
+
 # Initialize with a file path
 manager = excelManager("path/to/file.xlsx")
 
@@ -34,7 +31,8 @@ manager = excelManager("path/to/file.xlsx")
 manager = excelManager()
 ```
 
-### Basic Operations
+### Workbook Operations
+
 ```python
 # Create a new workbook
 manager.create_workbook("path/to/new_file.xlsx")
@@ -50,6 +48,7 @@ manager.close()
 ```
 
 ### Sheet Operations
+
 ```python
 # Get the number of sheets
 count = manager.count_sheets()
@@ -68,6 +67,7 @@ manager.delete_sheet("Sheet Name")
 ```
 
 ### Read Operations
+
 ```python
 # Read a cell value (using cell reference)
 value = manager.read_cell("Sheet1", "A1")
@@ -90,6 +90,7 @@ total = manager.read_total("Sheet1", 1, 1)  # Using row and column numbers
 ```
 
 ### Write Operations
+
 ```python
 # Write a cell value (using cell reference)
 manager.write_cell("Sheet1", "A1", "Value")
@@ -109,33 +110,42 @@ manager.write_range("Sheet1", 1, 1, data)
 
 ### Read Total Method
 
-The `read_total` method is particularly useful for finding totals in financial documents or reports. This method:
+The `read_total` method traverses down a column starting from a given cell, looking for the last non-empty value before an empty cell. This is particularly useful for finding totals at the end of data columns in financial spreadsheets or reports.
 
-1. Starts at a specified cell
-2. Traverses down the column until it finds an empty cell
-3. Returns the value from the last non-empty cell (which is typically a total)
-
-Usage example:
+Method signature:
 ```python
-# Find a total at the end of a column of values starting from F25
+def read_total(self, sheet_name, row_or_cell, column=None)
+```
+
+Parameters:
+- `sheet_name`: The name of the sheet to read from
+- `row_or_cell`: Either a cell reference string (e.g., "A1") or a row number
+- `column`: Optional column number (required if row_or_cell is a row number)
+
+Returns:
+- The value of the last non-empty cell in the column before an empty cell
+- `None` if no values are found
+
+Usage examples:
+```python
+# Find total in column F starting from row 25
 total = manager.read_total("Sheet1", "F25")
+
+# Find total using row and column numbers
+total = manager.read_total("Sheet1", 25, 6)
 ```
 
-## Installation
+How it works:
+1. Starts from the specified cell position
+2. Traverses down the column checking each cell
+3. When it encounters an empty cell, it returns the last non-empty value it found
+4. If it reaches the end of the sheet, it returns the last value
+5. Maintains formatting (e.g., currency symbols) and rounds floating point values
 
-1. Clone the repository
-2. Install dependencies:
-```
-pip install -r requirements.txt
-```
-3. Run the application:
-```
-streamlit run excel_app.py
-```
+## Implementation Details
 
-## Requirements
+The class maintains two copies of each workbook:
+- A data-only version for calculated values
+- A formula version for maintaining formulas and formatting
 
-- Python 3.6+
-- streamlit
-- openpyxl
-- pandas
+This dual approach ensures that both calculated values and original formulas are accessible.
