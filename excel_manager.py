@@ -16,7 +16,7 @@ logging.basicConfig(
     ]
 )
 
-class ExcelManager:
+class excelManager:
     def __init__(self, file_path=None):
         """
         Initialize the ExcelManager with an optional file path.

@@ -2,7 +2,7 @@ import streamlit as st
 import os
 import pandas as pd
 import tempfile
-from excel_manager import ExcelManager
+from excel_manager import excelManager
 
 st.title("Excel Manager App")
 
@@ -31,7 +31,7 @@ if uploaded_file is not None:
         f.write(uploaded_file.getbuffer())
     
     # Initialize ExcelManager with the uploaded file
-    st.session_state.excel_manager = ExcelManager(file_path)
+    st.session_state.excel_manager = excelManager(file_path)
     st.session_state.file_path = file_path
     st.sidebar.success(f"Loaded: {uploaded_file.name}")
 
@@ -42,7 +42,7 @@ if st.sidebar.button("Create New File") and new_file_name:
         new_file_name += '.xlsx'
     
     file_path = os.path.join(st.session_state.temp_dir, new_file_name)
-    st.session_state.excel_manager = ExcelManager()
+    st.session_state.excel_manager = excelManager()
     st.session_state.excel_manager.create_workbook(file_path)
     st.session_state.file_path = file_path
     st.sidebar.success(f"Created: {new_file_name}")
