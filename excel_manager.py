@@ -251,10 +251,14 @@ class excelManager:
         
         if isinstance(value, float):
             value = round(value, 2)
-        
+
+        # Check if cell is formatted as currency and prepend '$'
+        formula_cell = self.formula_workbook[sheet_name].cell(row=row, column=col)
+        if formula_cell.number_format and '$' in formula_cell.number_format and isinstance(value, (int, float)):
+            value = "$" + str(value)
+
         # Get the formula (if any) from the formula workbook for logging
-        formula_sheet = self.formula_workbook[sheet_name]
-        formula = formula_sheet.cell(row=row, column=col).value
+        formula = formula_cell.value
         
         cell_ref = f"{get_column_letter(col)}{row}"
         if isinstance(formula, str) and formula.startswith('='):
@@ -355,6 +359,11 @@ class excelManager:
                 cell_val = sheet.cell(row=row, column=col).value
                 if isinstance(cell_val, float):
                     cell_val = round(cell_val, 2)
+
+                # Check if cell is formatted as currency and prepend '$'
+                formula_cell = self.formula_workbook[sheet_name].cell(row=row, column=col)
+                if formula_cell.number_format and '$' in formula_cell.number_format and cell_val is not None and isinstance(cell_val, (int, float)):
+                    cell_val = "$" + str(cell_val)
                 row_values.append(cell_val)
             values.append(row_values)
         
