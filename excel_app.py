@@ -87,40 +87,29 @@ if st.session_state.excel_manager is not None:
             sheet_names = st.session_state.excel_manager.get_sheet_names()
             selected_sheet = st.selectbox("Select sheet", sheet_names)
             
-            # Read cell
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                read_row = st.number_input("Row", min_value=1, value=1, key="read_row")
-            with col2:
-                read_col = st.number_input("Column", min_value=1, value=1, key="read_col")
-            with col3:
-                resolve_references = st.checkbox("Resolve References", value=False, help="Follow cell references (like =A1) to get the actual value")
+            # Read cell (using cell reference)
+            st.subheader("Read Cell")
+            cell_reference = st.text_input("Cell Reference (e.g. A1, B5):", "A1")
             
             if st.button("Read Cell"):
-                value = st.session_state.excel_manager.read_cell(selected_sheet, read_row, read_col, hop=resolve_references)
-                st.info(f"Cell value: {value}")
-                
-                # Display additional info if it's a formula
-                if isinstance(value, str) and value.startswith('='):
-                    st.info("This cell contains a formula reference. Check 'Resolve References' to see the referenced value.")
+                try:
+                    value = st.session_state.excel_manager.read_cell(selected_sheet, cell_reference)
+                    st.info(f"Cell value: {value}")
+                except Exception as e:
+                    st.error(f"Error reading cell: {str(e)}")
             
             # Read range
             st.subheader("Read Range")
-            col1, col2 = st.columns(2)
-            with col1:
-                start_row = st.number_input("Start Row", min_value=1, value=1)
-                end_row = st.number_input("End Row", min_value=1, value=5)
-            with col2:
-                start_col = st.number_input("Start Column", min_value=1, value=1)
-                end_col = st.number_input("End Column", min_value=1, value=5)
+            range_reference = st.text_input("Range Reference (e.g. A1:C5):", "A1:B5")
             
             if st.button("Read Range"):
-                values = st.session_state.excel_manager.read_range(
-                    selected_sheet, start_row, start_col, end_row, end_col
-                )
-                # Convert to pandas DataFrame for better display
-                df = pd.DataFrame(values)
-                st.dataframe(df)
+                try:
+                    values = st.session_state.excel_manager.read_range(selected_sheet, range_reference)
+                    # Convert to pandas DataFrame for better display
+                    df = pd.DataFrame(values)
+                    st.dataframe(df)
+                except Exception as e:
+                    st.error(f"Error reading range: {str(e)}")
     
     with tab3:
         st.subheader("Write Operations")
@@ -130,29 +119,22 @@ if st.session_state.excel_manager is not None:
             sheet_names = st.session_state.excel_manager.get_sheet_names()
             selected_sheet = st.selectbox("Select sheet", sheet_names, key="write_sheet")
             
-            # Write cell
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                write_row = st.number_input("Row", min_value=1, value=1, key="write_row")
-            with col2:
-                write_col = st.number_input("Column", min_value=1, value=1, key="write_col")
-            with col3:
-                write_value = st.text_input("Value", key="write_value")
+            # Write cell (using cell reference)
+            st.subheader("Write Cell")
+            cell_reference = st.text_input("Cell Reference (e.g. A1, B5):", "A1", key="write_cell_ref")
+            write_value = st.text_input("Value:", key="write_value")
             
             if st.button("Write Cell"):
-                st.session_state.excel_manager.write_cell(
-                    selected_sheet, write_row, write_col, write_value
-                )
-                st.success(f"Wrote '{write_value}' to cell ({write_row}, {write_col})")
-                st.session_state.excel_manager.save()
+                try:
+                    st.session_state.excel_manager.write_cell(selected_sheet, cell_reference, write_value)
+                    st.success(f"Wrote '{write_value}' to cell {cell_reference}")
+                    st.session_state.excel_manager.save()
+                except Exception as e:
+                    st.error(f"Error writing cell: {str(e)}")
             
             # Write range (using CSV input)
             st.subheader("Write Range")
-            col1, col2 = st.columns(2)
-            with col1:
-                start_row_write = st.number_input("Start Row", min_value=1, value=1, key="range_row")
-            with col2:
-                start_col_write = st.number_input("Start Column", min_value=1, value=1, key="range_col")
+            start_cell = st.text_input("Start Cell (e.g. A1):", "A1", key="range_start_cell")
             
             csv_data = st.text_area(
                 "Enter CSV data (comma-separated values, one row per line):",
@@ -160,17 +142,18 @@ if st.session_state.excel_manager is not None:
             )
             
             if st.button("Write Range"):
-                # Parse CSV data
-                rows = []
-                for line in csv_data.strip().split("\n"):
-                    values = line.split(",")
-                    rows.append(values)
-                
-                st.session_state.excel_manager.write_range(
-                    selected_sheet, start_row_write, start_col_write, rows
-                )
-                st.success(f"Wrote data to range starting at ({start_row_write}, {start_col_write})")
-                st.session_state.excel_manager.save()
+                try:
+                    # Parse CSV data
+                    rows = []
+                    for line in csv_data.strip().split("\n"):
+                        values = line.split(",")
+                        rows.append(values)
+                    
+                    st.session_state.excel_manager.write_range(selected_sheet, start_cell, rows)
+                    st.success(f"Wrote data to range starting at {start_cell}")
+                    st.session_state.excel_manager.save()
+                except Exception as e:
+                    st.error(f"Error writing range: {str(e)}")
     
     with tab4:
         st.subheader("Delete Operations")
