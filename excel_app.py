@@ -110,6 +110,20 @@ if st.session_state.excel_manager is not None:
                     st.dataframe(df)
                 except Exception as e:
                     st.error(f"Error reading range: {str(e)}")
+            
+            # Read total (new functionality)
+            st.subheader("Read Total")
+            total_start_reference = st.text_input("Starting Cell (e.g. A1, F25):", "A1", key="total_start_ref")
+            
+            if st.button("Find Total"):
+                try:
+                    total_value = st.session_state.excel_manager.read_total(selected_sheet, total_start_reference)
+                    if total_value is not None:
+                        st.info(f"Total value: {total_value}")
+                    else:
+                        st.warning("No total value found in this column.")
+                except Exception as e:
+                    st.error(f"Error finding total: {str(e)}")
     
     with tab3:
         st.subheader("Write Operations")

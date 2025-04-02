@@ -417,3 +417,95 @@ class excelManager:
         range_ref = f"{get_column_letter(start_col)}{start_row}:{get_column_letter(end_col)}{end_row}"
         
         self.logger.info(f"Wrote values to range {range_ref} in sheet {sheet_name}")
+        
+    def read_total(self, sheet_name, row_or_cell, column=None):
+        """
+        Read the total value by traversing down rows until an empty cell is found.
+        Then back up one cell and return that value.
+        
+        Can be called in two ways:
+        - read_total(sheet_name, 'A1') - using cell reference
+        - read_total(sheet_name, 1, 1) - using row and column numbers
+        
+        Returns the calculated total value, typically found at the end of a column of values.
+        """
+        if not self.workbook:
+            self.logger.error("No workbook loaded")
+            raise ValueError("No workbook loaded")
+        
+        # Get the row and column based on the input parameters
+        if column is None:
+            # Assume row_or_cell is a cell reference like 'A1'
+            if not isinstance(row_or_cell, str):
+                self.logger.error("Cell reference must be a string")
+                raise ValueError("Cell reference must be a string")
+            
+            sheet_ref, start_row, start_col = self._parse_cell_reference(row_or_cell, sheet_name)
+            sheet_name = sheet_ref  # Use the sheet name from the reference if provided
+        else:
+            # Using row and column numbers
+            start_row = row_or_cell
+            start_col = column
+        
+        if sheet_name not in self.workbook.sheetnames:
+            self.logger.error(f"Sheet does not exist: {sheet_name}")
+            raise ValueError(f"Sheet does not exist: {sheet_name}")
+        
+        # Get the sheet from the data_only workbook to read calculated values
+        sheet = self.workbook[sheet_name]
+        
+        # Start from the given cell and traverse down
+        current_row = start_row
+        max_rows = sheet.max_row
+        
+        # Keep track of the last non-empty cell value encountered
+        last_value = None
+        last_row = None
+        
+        while current_row <= max_rows:
+            value = sheet.cell(row=current_row, column=start_col).value
+            
+            # If we find an empty cell and we've seen at least one non-empty cell, 
+            # we'll return the last non-empty cell value (which should be the total)
+            if value is None or value == '':
+                if last_value is not None:
+                    # Format the value if needed
+                    if isinstance(last_value, float):
+                        last_value = round(last_value, 2)
+                    
+                    # Check if cell is formatted as currency and prepend '$'
+                    formula_cell = self.formula_workbook[sheet_name].cell(row=last_row, column=start_col)
+                    if formula_cell.number_format and '$' in formula_cell.number_format and isinstance(last_value, (int, float)):
+                        last_value = "$" + str(last_value)
+                    
+                    cell_ref = f"{get_column_letter(start_col)}{last_row}"
+                    self.logger.info(f"Found total value '{last_value}' at cell {cell_ref} in sheet {sheet_name}")
+                    return last_value
+                else:
+                    # If we haven't found any non-empty cells, continue searching
+                    current_row += 1
+                    continue
+            
+            # Update the last non-empty value seen
+            last_value = value
+            last_row = current_row
+            current_row += 1
+        
+        # If we reach the end of the sheet and have a value, return it
+        if last_value is not None:
+            # Format the value if needed
+            if isinstance(last_value, float):
+                last_value = round(last_value, 2)
+            
+            # Check if cell is formatted as currency and prepend '$'
+            formula_cell = self.formula_workbook[sheet_name].cell(row=last_row, column=start_col)
+            if formula_cell.number_format and '$' in formula_cell.number_format and isinstance(last_value, (int, float)):
+                last_value = "$" + str(last_value)
+            
+            cell_ref = f"{get_column_letter(start_col)}{last_row}"
+            self.logger.info(f"Found total value '{last_value}' at cell {cell_ref} in sheet {sheet_name} (at end of sheet)")
+            return last_value
+        
+        # If no non-empty cells were found
+        self.logger.warning(f"No values found starting from {get_column_letter(start_col)}{start_row} in sheet {sheet_name}")
+        return None
