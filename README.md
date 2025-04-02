@@ -13,6 +13,7 @@ The `excelManager` class provides a powerful yet simple interface for interactin
 - Read individual cells and ranges with calculated values
 - Write to cells and ranges
 - Find totals at the end of columns 
+- Extract consecutive items from columns with offset capability
 - Support for A1 notation and row/column indices
 - Consistent error handling and logging
 - Currency and numeric formatting support
@@ -87,6 +88,11 @@ values = manager.read_range("Sheet1", 1, 1, 3, 3)
 # Find a total value by traversing down a column
 total = manager.read_total("Sheet1", "A1")  # Using cell reference
 total = manager.read_total("Sheet1", 1, 1)  # Using row and column numbers
+
+# Read consecutive items from a column until an empty cell
+items = manager.read_items("Sheet1", "A1")  # Using cell reference
+items = manager.read_items("Sheet1", "A1", offset=1)  # Exclude the last item (total)
+items = manager.read_items("Sheet1", 1, 1)  # Using row and column numbers
 ```
 
 ### Write Operations
@@ -141,6 +147,46 @@ How it works:
 3. When it encounters an empty cell, it returns the last non-empty value it found
 4. If it reaches the end of the sheet, it returns the last value
 5. Maintains formatting (e.g., currency symbols) and rounds floating point values
+
+### Read Items Method
+
+The `read_items` method collects all consecutive non-empty values in a column starting from a given cell until it encounters an empty cell. It also provides an option to exclude a specified number of rows from the end, which is useful when you want to retrieve line items without including summary totals.
+
+Method signature:
+```python
+def read_items(self, sheet_name, row_or_cell, column=None, offset=0)
+```
+
+Parameters:
+- `sheet_name`: The name of the sheet to read from
+- `row_or_cell`: Either a cell reference string (e.g., "A1") or a row number
+- `column`: Optional column number (required if row_or_cell is a row number)
+- `offset`: Number of rows to exclude from the end of the found range (default 0)
+
+Returns:
+- A list of values from the starting cell until an empty cell is found
+- The list will exclude the specified number of items from the end if offset is provided
+- An empty list if no values are found
+
+Usage examples:
+```python
+# Get all items in column A starting from row 1
+items = manager.read_items("Sheet1", "A1")
+
+# Get items in column A, excluding the last row (e.g., a total)
+items = manager.read_items("Sheet1", "A1", offset=1)
+
+# Get items using row and column numbers, excluding the last 2 rows
+items = manager.read_items("Sheet1", 1, 1, offset=2)
+```
+
+How it works:
+1. Starts from the specified cell position
+2. Traverses down the column collecting all non-empty values
+3. Stops when it encounters the first empty cell
+4. Applies the offset by removing the specified number of items from the end of the collected list
+5. Maintains formatting (e.g., currency symbols) and rounds floating point values
+6. Returns the resulting list of values
 
 ## Implementation Details
 
