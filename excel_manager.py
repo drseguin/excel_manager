@@ -249,7 +249,9 @@ class excelManager:
         sheet = self.workbook[sheet_name]
         value = sheet.cell(row=row, column=col).value
         
-        if isinstance(value, float):
+        if value is None:
+            value = ''
+        elif isinstance(value, float):
             value = round(value, 2)
 
         # Check if cell is formatted as currency and prepend '$'
@@ -357,7 +359,9 @@ class excelManager:
             row_values = []
             for col in range(start_col, end_col + 1):
                 cell_val = sheet.cell(row=row, column=col).value
-                if isinstance(cell_val, float):
+                if cell_val is None:
+                    cell_val = ''
+                elif isinstance(cell_val, float):
                     cell_val = round(cell_val, 2)
 
                 # Check if cell is formatted as currency and prepend '$'
