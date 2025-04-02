@@ -249,6 +249,9 @@ class excelManager:
         sheet = self.workbook[sheet_name]
         value = sheet.cell(row=row, column=col).value
         
+        if isinstance(value, float):
+            value = round(value, 2)
+        
         # Get the formula (if any) from the formula workbook for logging
         formula_sheet = self.formula_workbook[sheet_name]
         formula = formula_sheet.cell(row=row, column=col).value
@@ -349,7 +352,10 @@ class excelManager:
         for row in range(start_row, end_row + 1):
             row_values = []
             for col in range(start_col, end_col + 1):
-                row_values.append(sheet.cell(row=row, column=col).value)
+                cell_val = sheet.cell(row=row, column=col).value
+                if isinstance(cell_val, float):
+                    cell_val = round(cell_val, 2)
+                row_values.append(cell_val)
             values.append(row_values)
         
         range_ref = f"{get_column_letter(start_col)}{start_row}:{get_column_letter(end_col)}{end_row}"
