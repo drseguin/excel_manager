@@ -286,6 +286,27 @@ def read_title_total(self, sheet_name, row_or_cell, title, column=None)
   - Returns None if the title is not found or no total value exists
   - Raises an error if the sheet doesn't exist or no workbook is loaded
 
+#### Read Title Total
+
+```python
+def read_title_total(self, sheet_name, row_or_cell, title, column=None)
+```
+
+- **Purpose**: Find a column with a matching title, then get the total value from that column
+- **Parameters**:
+  - `sheet_name`: Name of the sheet to read from
+  - `row_or_cell`: Either a cell reference string (e.g., "A1") or a row number
+  - `title`: The column title to search for (case-insensitive)
+  - `column` (optional): Column number (required if row_or_cell is a row number)
+- **Returns**: The formatted total value from the column with the matching title
+- **Behavior**:
+  - Starts from the specified position and traverses right until it finds a cell with text matching the title (case-insensitive)
+  - Once the title is found, traverses down that column until an empty cell is found
+  - Returns the last non-empty value in that column (typically a total)
+  - Preserves currency formatting and numeric formatting
+  - Returns None if the title is not found or no total value exists
+  - Raises an error if the sheet doesn't exist or no workbook is loaded
+
 #### Read Items
 
 ```python
