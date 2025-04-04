@@ -82,7 +82,7 @@ if st.session_state.excel_manager is not None:
     with tab2:
         st.subheader("Read Operations")
         
-        # Select sheet
+        # Select sheet for all operations in this tab
         if st.session_state.excel_manager:
             sheet_names = st.session_state.excel_manager.get_sheet_names()
             selected_sheet = st.selectbox("Select sheet", sheet_names)
@@ -124,6 +124,27 @@ if st.session_state.excel_manager is not None:
                         st.warning("No total value found in this column.")
                 except Exception as e:
                     st.error(f"Error finding total: {str(e)}")
+            
+            # Read title total (new functionality)
+            st.subheader("Read Title Total")
+            # Add a separate sheet selector specifically for this operation
+            title_sheet = st.selectbox("Select sheet for title search", sheet_names, key="title_sheet_selector")
+            title_start_reference = st.text_input("Starting Cell (e.g. A1, F1):", "A1", key="title_start_ref")
+            title_to_find = st.text_input("Title to Find:", key="title_to_find")
+            
+            if st.button("Find Title Total"):
+                try:
+                    if not title_to_find:
+                        st.warning("Please enter a title to find.")
+                    else:
+                        # Using the dedicated sheet selector for this operation
+                        title_total_value = st.session_state.excel_manager.read_title_total(title_sheet, title_start_reference, title_to_find)
+                        if title_total_value is not None:
+                            st.info(f"Total value for '{title_to_find}' in sheet '{title_sheet}': {title_total_value}")
+                        else:
+                            st.warning(f"No title '{title_to_find}' found or no total value in that column in sheet '{title_sheet}'.")
+                except Exception as e:
+                    st.error(f"Error finding title total: {str(e)}")
             
             # Read items (new functionality)
             st.subheader("Read Items")

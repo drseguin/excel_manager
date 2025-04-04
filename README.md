@@ -13,6 +13,7 @@ The `excelManager` class provides a powerful yet simple interface for interactin
 - Read individual cells and ranges with calculated values
 - Write to cells and ranges
 - Find totals at the end of columns 
+- Find totals by column title
 - Extract consecutive items from columns with offset capability
 - Support for A1 notation and row/column indices
 - Consistent error handling and logging
@@ -264,6 +265,27 @@ def read_total(self, sheet_name, row_or_cell, column=None)
   - Returns None if no non-empty cells are found
   - Raises an error if the sheet doesn't exist or no workbook is loaded
 
+#### Read Title Total
+
+```python
+def read_title_total(self, sheet_name, row_or_cell, title, column=None)
+```
+
+- **Purpose**: Find a column with a matching title, then get the total value from that column
+- **Parameters**:
+  - `sheet_name`: Name of the sheet to read from
+  - `row_or_cell`: Either a cell reference string (e.g., "A1") or a row number
+  - `title`: The column title to search for (case-insensitive)
+  - `column` (optional): Column number (required if row_or_cell is a row number)
+- **Returns**: The formatted total value from the column with the matching title
+- **Behavior**:
+  - Starts from the specified position and traverses right until it finds a cell with text matching the title (case-insensitive)
+  - Once the title is found, traverses down that column until an empty cell is found
+  - Returns the last non-empty value in that column (typically a total)
+  - Preserves currency formatting and numeric formatting
+  - Returns None if the title is not found or no total value exists
+  - Raises an error if the sheet doesn't exist or no workbook is loaded
+
 #### Read Items
 
 ```python
@@ -343,6 +365,7 @@ The Excel App is a Streamlit-based user interface for interacting with the Excel
    - Read individual cell values
    - Read ranges of cells with tabular display
    - Find totals in columns
+   - Find totals by column title
    - Extract sequences of items from columns
 
 4. **Write Operations**:
@@ -362,6 +385,7 @@ The app is organized into several tabs for different types of operations:
    - Cell reference input for reading single cells
    - Range reference input for reading ranges
    - Total finder with cell reference input
+   - Title total finder with sheet selector, cell reference, and title inputs
    - Item finder with cell reference and offset inputs
 
 3. **Write Tab**:
@@ -425,7 +449,13 @@ streamlit run excel_app.py
    - Enter a starting cell reference (e.g., "A1")
    - Click "Find Total" to display the last non-empty value in that column
 
-4. **Find Items in a Column**:
+4. **Find a Title Total Value**:
+   - Select a sheet from the dedicated dropdown
+   - Enter a starting cell reference (e.g., "A1") where the header row begins
+   - Enter the title text to search for (case-insensitive)
+   - Click "Find Title Total" to display the total value from the column with that title
+
+5. **Find Items in a Column**:
    - Select a sheet from the dropdown
    - Enter a starting cell reference (e.g., "A1")
    - Set an offset value (optional)
